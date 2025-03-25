@@ -82,5 +82,8 @@ def undistort(file: str, Kmtx: np.array, dist: np.array):
 if __name__ == "__main__":
     files = glob.glob("./GrayCodes/chess/*.jpg")
     ret, Kmtx, dist, rvecs, tvecs = intrinsic_calibration(files, (7, 9))
+    np.savez("intrinsic_calibration.npz", Kmtx=Kmtx, dist=dist)
+    np.savez("extrinsic_vectors.npz", rvecs=rvecs, tvecs=tvecs)
+
     cv.imshow("Undistorted", undistort(files[0], Kmtx, dist))
     cv.waitKey()
