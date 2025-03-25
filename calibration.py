@@ -24,54 +24,62 @@ import numpy as np
 import cv2 as cv
 import glob
 
-def intrinsic_calibration(file_names: list, grid_size: (int, int)):
-	# termination criteria
-	criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
- 
-	# prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-	grid_x, grid_y = grid_size
-	objp = np.zeros((grid_x * grid_y,3), np.float32)
-	objp[:,:2] = np.mgrid[0:grid_x,0:grid_y].T.reshape(-1,2)
-	
-	# Arrays to store object points and image points from all the images.
-	objpoints = [] # 3d point in real world space
-	imgpoints = [] # 2d points in image plane.
 
-	for fn in file_names:
-		img = cv.imread(fn)
-		img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
-		gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+def loadChessCorners(
+    file: str,
+    objpoints: list,
+    imgpoints: list,
+    grid_size: tuple[int, int],
+    criteria: tuple[int, int, float],
+):
+    grid_x, grid_y = grid_size
+    objp = np.zeros((grid_x * grid_y, 3), np.float32)
+    objp[:, :2] = np.mgrid[0:grid_x, 0:grid_y].T.reshape(-1, 2)
 
-		# Find the chess board corners
-		ret, corners = cv.findChessboardCorners(gray, grid_size, None)
+    img = cv.imread(file)
+    img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-		# If found, add object points, image points (after refining them)
-		if ret :
-			objpoints.append(objp)
+    # Find the chess board corners
+    ret, corners = cv.findChessboardCorners(gray, grid_size, None)
 
-			corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
-			imgpoints.append(corners2)
+    # If found, add object points, image points (after refining them)
+    if ret:
+        objpoints.append(objp)
 
-	# Calibration
-	_, Kmtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+        corners2 = cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+        imgpoints.append(corners2)
 
 
-	# Undistortion
-	h,  w = img.shape[:2]
-	newcameramtx, roi = cv.getOptimalNewCameraMatrix(Kmtx, dist, (w,h), 1, (w,h))
+def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]):
+    # termination criteria
+    criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-	# undistort
-	dst = cv.undistort(img, Kmtx, dist, None, newcameramtx)
-	
-	# crop the image
-	x, y, w, h = roi
-	dst = dst[y:y+h, x:x+w]
+    # Arrays to store object points and image points from all the images.
+    objpoints = []  # 3d point in real world space
+    imgpoints = []  # 2d points in image plane.
 
-	# cv.imshow('distorted', img)
-	# cv.imshow("undistorted", dst)
-	# cv.waitKey()
-	# cv.imwrite('calibresult.png', dst)
+    for fn in file_names:
+        loadChessCorners(fn, objpoints, imgpoints, grid_size, criteria)
 
-directory = "./GrayCodes/chess"
-files = [join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
-intrinsic_calibration(files, (7,9))
+    img = cv.imread(file_names[0])
+    img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+    # Calibration
+    return cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+
+    # Undistortion
+    h, w = img.shape[:2]
+    newcameramtx, roi = cv.getOptimalNewCameraMatrix(Kmtx, dist, (w, h), 1, (w, h))
+
+    # undistort
+    dst = cv.undistort(img, Kmtx, dist, None, newcameramtx)
+
+    # crop the image
+    x, y, w, h = roi
+    dst = dst[y : y + h, x : x + w]
+
+
+files = glob.glob("./GrayCodes/chess/*.jpg")
+print(intrinsic_calibration(files, (7, 9)))
