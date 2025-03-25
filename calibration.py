@@ -64,22 +64,23 @@ def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]):
 
     img = cv.imread(file_names[0])
     img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
     # Calibration
-    return cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+    return cv.calibrateCamera(objpoints, imgpoints, img.shape[::2], None, None)
 
-    # Undistortion
-    h, w = img.shape[:2]
+
+def undistort(file: str, Kmtx: np.array, dist: np.array):
+    img = cv.imread(file)
+    img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+    h, w = gray.shape[:2]
     newcameramtx, roi = cv.getOptimalNewCameraMatrix(Kmtx, dist, (w, h), 1, (w, h))
-
-    # undistort
-    dst = cv.undistort(img, Kmtx, dist, None, newcameramtx)
-
-    # crop the image
-    x, y, w, h = roi
-    dst = dst[y : y + h, x : x + w]
+    return cv.undistort(gray, Kmtx, dist, None, newcameramtx)
 
 
-files = glob.glob("./GrayCodes/chess/*.jpg")
-print(intrinsic_calibration(files, (7, 9)))
+if __name__ == "__main__":
+    files = glob.glob("./GrayCodes/chess/*.jpg")
+    ret, Kmtx, dist, rvecs, tvecs = intrinsic_calibration(files, (7, 9))
+    cv.imshow("undistorted", undistort(files[0], Kmtx, dist))
+    cv.waitKey()
