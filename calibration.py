@@ -24,7 +24,6 @@ import numpy as np
 import cv2 as cv
 import glob
 
-<<<<<<< HEAD
 
 def loadChessCorners(
     file: str,
@@ -36,25 +35,6 @@ def loadChessCorners(
     grid_x, grid_y = grid_size
     objp = np.zeros((grid_x * grid_y, 3), np.float32)
     objp[:, :2] = np.mgrid[0:grid_x, 0:grid_y].T.reshape(-1, 2)
-=======
-def intrinsic_calibration(file_paths: list, grid_size: (int, int)):
-	# termination criteria
-	criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
- 
-	# prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-	grid_x, grid_y = grid_size
-	objp = np.zeros((grid_x * grid_y,3), np.float32)
-	objp[:,:2] = np.mgrid[0:grid_x,0:grid_y].T.reshape(-1,2)
-	
-	# Arrays to store object points and image points from all the images.
-	objpoints = [] # 3d point in real world space
-	imgpoints = [] # 2d points in image plane.
-
-	for fp in file_paths:
-		img = cv.imread(fp)
-		img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
-		gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
->>>>>>> b062f1b484c39051ab99fdac26abdcb08d37199b
 
     img = cv.imread(file)
     img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
@@ -70,11 +50,6 @@ def intrinsic_calibration(file_paths: list, grid_size: (int, int)):
         corners2 = cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
         imgpoints.append(corners2)
 
-	return Kmtx, dist, rvecs, tvecs
-
-def undistort_image(file_path: str):
-	img = cv.imread(file_path)
-	img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
 
 def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]):
     # termination criteria
@@ -107,5 +82,5 @@ def undistort(file: str, Kmtx: np.array, dist: np.array):
 if __name__ == "__main__":
     files = glob.glob("./GrayCodes/chess/*.jpg")
     ret, Kmtx, dist, rvecs, tvecs = intrinsic_calibration(files, (7, 9))
-    cv.imshow("undistorted", undistort(files[0], Kmtx, dist))
+    cv.imshow("Undistorted", undistort(files[0], Kmtx, dist))
     cv.waitKey()
