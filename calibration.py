@@ -46,13 +46,11 @@ def intrinsic_calibration(file_names: list, grid_size: (int, int)):
 		ret, corners = cv.findChessboardCorners(gray, grid_size, None)
 
 		# If found, add object points, image points (after refining them)
-		if not ret :
-			continue
+		if ret :
+			objpoints.append(objp)
 
-		objpoints.append(objp)
-
-		corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
-		imgpoints.append(corners2)
+			corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
+			imgpoints.append(corners2)
 
 	# Calibration
 	_, Kmtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
