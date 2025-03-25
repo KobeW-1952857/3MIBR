@@ -17,11 +17,14 @@
 # cv2.imshow("test", image)
 # cv2.waitKey(10000)
 
+from genericpath import isfile
+from ntpath import join
+from os import listdir
 import numpy as np
 import cv2 as cv
 import glob
 
-def intrinsic_calibration(file_name: str, grid_size: (int, int)):
+def intrinsic_calibration(file_names: list, grid_size: (int, int)):
 	# termination criteria
 	criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
  
@@ -33,22 +36,21 @@ def intrinsic_calibration(file_name: str, grid_size: (int, int)):
 	# Arrays to store object points and image points from all the images.
 	objpoints = [] # 3d point in real world space
 	imgpoints = [] # 2d points in image plane.
-	
-	img = cv.imread(file_name)
-	img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
-	gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-	# Find the chess board corners
-	ret, corners = cv.findChessboardCorners(gray, grid_size, None)
+	for fn in file_names:
+		img = cv.imread(fn)
+		img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
+		gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-	# If found, add object points, image points (after refining them)
-	if not ret :
-		return
+		# Find the chess board corners
+		ret, corners = cv.findChessboardCorners(gray, grid_size, None)
 
-	objpoints.append(objp)
+		# If found, add object points, image points (after refining them)
+		if ret :
+			objpoints.append(objp)
 
-	corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
-	imgpoints.append(corners2)
+			corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
+			imgpoints.append(corners2)
 
 	# Calibration
 	_, Kmtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
@@ -70,4 +72,6 @@ def intrinsic_calibration(file_name: str, grid_size: (int, int)):
 	# cv.waitKey()
 	# cv.imwrite('calibresult.png', dst)
 
-intrinsic_calibration("./GrayCodes/chess/00.jpg", (7,9))
+directory = "./GrayCodes/chess"
+files = [join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
+intrinsic_calibration(files, (7,9))
