@@ -32,6 +32,7 @@ def loadChessCorners(
 
 
 def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]):
+    print("Staring calibration")
     # termination criteria
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -39,9 +40,10 @@ def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]):
     objpoints = []  # 3d point in real world space
     imgpoints = []  # 2d points in image plane.
 
-    for fn in file_names:
+    for i, fn in enumerate(file_names):
         loadChessCorners(fn, objpoints, imgpoints, grid_size, criteria)
-
+        print(f"\rProgress: {i / len(file_names) * 100:.2f}%", end="")
+    print("\nCalibration complete")
     img = cv.imread(file_names[0])
     img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
 
@@ -71,8 +73,22 @@ def combine_extrinsic_vecs(rvecs, tvecs):
     return extrinsics
 
 
+def get_image_dimensions(file_path: str) -> tuple[int, int]:
+    img = cv.imread(file_path)
+    return img.shape[:2]
+
+
 if __name__ == "__main__":
     files = glob.glob("./GrayCodes/chess/*.jpg")
     rms, Kmtx, dist, rvecs, tvecs = intrinsic_calibration(files, (7, 9))
     extrinsics = combine_extrinsic_vecs(rvecs, tvecs)
-    np.savez("calibration.npz", Kmtx=Kmtx, dist=dist, extrinsics=extrinsics)
+    img_size = get_image_dimensions(files[0])
+    print(img_size)
+
+    np.savez(
+        "calibration.npz",
+        Kmtx=Kmtx,
+        dist=dist,
+        extrinsics=extrinsics,
+        img_size=img_size,
+    )
