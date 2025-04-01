@@ -1,6 +1,8 @@
 import math
 import cv2
 import numpy as np
+import numpy.typing as npt
+
 
 def binary_to_gray(num: int) -> int:
     """
@@ -23,17 +25,22 @@ def get_bit(decimal: int, n: int) -> int:
     constant = 1 << (n - 1)
     return 1 if decimal & constant else 0
 
+
 class GrayCodeEncoder:
     def __init__(self, rows: int, cols: int, depth: int):
         self.cols = cols
         self.rows = rows
         self.n = depth * 4  # number of frames to be computed
-        self.patterns = []
+        self.patterns: list[np.ndarray] = []
 
         n_horiz_bits = math.ceil(math.log2(float(self.cols)))
         n_vert_bits = math.ceil(math.log2(float(self.rows)))
 
         # compute horizontal encoding patterns
+        full_white = np.ones((rows, cols, 3), np.uint8) * 255
+        self.patterns.append(full_white)
+        self.patterns.append(cv2.bitwise_not(full_white))
+
         for i in range(depth):
             pattern = np.zeros((1, cols, 3), np.uint8)
             # loop through columns in first row
@@ -41,7 +48,7 @@ class GrayCodeEncoder:
                 gray = binary_to_gray(j)
                 # amplitude of channels
                 amp = get_bit(gray, n_horiz_bits - i)
-                pattern[0, j] = [255.0 * amp, 255.0 * amp, 255.0 * amp]
+                pattern[0, j, :] = [255.0 * amp, 255.0 * amp, 255.0 * amp]
             pattern = pattern.repeat(rows, axis=0)
             self.patterns.append(pattern)
             self.patterns.append(cv2.bitwise_not(pattern))
@@ -54,10 +61,18 @@ class GrayCodeEncoder:
                 gray = binary_to_gray(j)
                 # Amplitude of channels
                 amp = get_bit(gray, n_vert_bits - i)
-                pattern[j, 0] = [255.0 * amp, 255.0 * amp, 255.0 * amp]
+                pattern[j, 0, :] = [255.0 * amp, 255.0 * amp, 255.0 * amp]
             pattern = pattern.repeat(cols, axis=1)
             self.patterns.append(pattern)
             self.patterns.append(cv2.bitwise_not(pattern))
 
-    def get_encoding_pattern(self, depth) -> np.array:
+    def get_encoding_pattern(self, depth) -> np.ndarray:
         return self.patterns[depth]
+
+
+if __name__ == "__main__":
+    encoder = GrayCodeEncoder(1080, 1920, 2)
+    for i, pattern in enumerate(encoder.patterns):
+        cv2.imshow(str(i), pattern)
+        cv2.waitKey(0)
+    cv2.destroyAllWindows()

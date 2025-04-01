@@ -37,8 +37,8 @@ def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]):
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
     # Arrays to store object points and image points from all the images.
-    objpoints = []  # 3d point in real world space
-    imgpoints = []  # 2d points in image plane.
+    objpoints: list[np.ndarray] = []  # 3d point in real world space
+    imgpoints: list[np.ndarray] = []  # 2d points in image plane.
 
     for i, fn in enumerate(file_names):
         loadChessCorners(fn, objpoints, imgpoints, grid_size, criteria)
@@ -83,7 +83,6 @@ if __name__ == "__main__":
     rms, Kmtx, dist, rvecs, tvecs = intrinsic_calibration(files, (7, 9))
     extrinsics = combine_extrinsic_vecs(rvecs, tvecs)
     img_size = get_image_dimensions(files[0])
-    print(img_size)
 
     np.savez(
         "calibration.npz",
