@@ -53,7 +53,7 @@ def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]):
     )
 
 
-def undistort(file: str, Kmtx: cvt.MatLike, dist: cvt.MatLike):
+def undistort(file: str, Kmtx: cvt.MatLike, dist: cvt.MatLike) -> cvt.MatLike:
     img = cv.imread(file)
     img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
