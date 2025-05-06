@@ -6,6 +6,22 @@ import math
 from GrayCodeEncoder import GrayCodeEncoder
 from calibration import undistort
 
+def difference_indices(indices1, indices2):
+    set1 = set(zip(*indices1))
+    set2 = set(zip(*indices2))
+
+    indices_set = set1.difference(set2)
+
+    x = np.ndarray((0), dtype=np.uint32)
+    y = np.ndarray((0), dtype=np.uint32)
+
+    for idx in indices_set:
+        x = np.append(x, [idx[0]])
+        y = np.append(y, [idx[1]])
+
+    return tuple([x, y])
+     
+
 
 def gray_to_binary(num: int) -> int:
     """
@@ -38,27 +54,41 @@ class GrayCodeDecoder:
         self.shape = gray_codes[0].shape
         self.depth = get_depth_from_patterns(len(gray_codes))
 
-    def decode(self, threshold: float) -> tuple[np.ndarray, np.ndarray]:
+    def decode(self, threshold: float) -> np.ndarray:
         full, vertical, horizontal = self.__split_patterns()
-        result_horizontal = np.zeros(self.shape, dtype=np.uint8)
-        result_vertical = np.zeros(self.shape, dtype=np.uint8)
+        result = np.zeros(self.shape, dtype=np.uint32)
         proj_indices = self.__get_projection_indices(full, threshold)
+        patterns = []
+        patterns.extend(vertical)
+        patterns.extend(horizontal)
+        for i in range(0, 4 * self.depth, 2):
+            padded_diff = np.zeros(self.shape, dtype=np.bool) # bool matrix
 
-        for i in range(0, 2 * self.depth, 2):
-            padded_diff = np.zeros(self.shape, dtype=np.bool)
-            diff = cv2.absdiff(horizontal[i][proj_indices[0], proj_indices[1]], horizontal[i + 1][proj_indices[0], proj_indices[1]])
-            padded_diff[proj_indices[0], proj_indices[1]] = np.asarray(diff > threshold * 255)[:,0]
-            indices = padded_diff.nonzero()
-            result_horizontal[indices] = set_bit(
-                result_horizontal[indices], i // 2 + 1, 1
-            )
-            padded_diff = np.zeros(self.shape, dtype=np.bool)
-            diff = cv2.absdiff(vertical[i][proj_indices[0], proj_indices[1]], vertical[i + 1][proj_indices[0], proj_indices[1]])
-            padded_diff[proj_indices[0], proj_indices[1]] = np.asarray(diff > threshold * 255)[:,0]
-            indices = padded_diff.nonzero()
-            result_vertical[indices] = set_bit(result_vertical[indices], i // 2 + 1, 1)
+            img1: np.ndarray = patterns[i][proj_indices[0], proj_indices[1]]
+            img2: np.ndarray = patterns[i + 1][proj_indices[0], proj_indices[1]]
 
-        return result_horizontal, result_vertical
+            diff = cv2.absdiff(img1, img2) # absolute difference between the projection area's of pattern and its inverse
+
+            if (img1.shape[0] < diff.shape[0]):
+                diff = diff[0:img1.shape[0]]
+                
+
+            padded_diff[proj_indices[0], proj_indices[1]] = np.asarray(diff > threshold * 255)[:,0] # insert into bool matrix where absdiff is above threshold
+            indices = padded_diff.nonzero() # get nonzero absdiff pixel value coordinates
+
+            result[indices] = set_bit(result[indices], i // 2 + 1, 1) # update greycode for nonezero absdiff pixel value coordinates
+            
+            padded_diff = np.zeros(self.shape, dtype=np.bool) # re-init bool matrix
+
+            mask = (diff <= threshold * 255) & (diff > 0)
+            padded_diff[proj_indices[0], proj_indices[1]] = np.asarray(mask)[:,0] # insert into bool matrix where absdiff is threshold or lower, but larger than 0
+            invalid_indices = padded_diff.nonzero() # get coordinates of pixels with absdiff smaller or equal to threshold or larger than 0
+
+            result[invalid_indices] = 0 # set codes to zero because bit in current pattern was unknown, making whole code for that pixel unknown and thus invalid
+            
+            proj_indices = difference_indices(proj_indices, invalid_indices) # remove invalid indices from projection area
+
+        return result
 
     def __split_patterns(
         self,
@@ -89,7 +119,7 @@ if __name__ == "__main__":
     # ]
 
     decoder = GrayCodeDecoder(gray_codes)
-    hor0, vert0 = decoder.decode(0.5)
+    res0 = decoder.decode(0.2)
     # print(hor, vert, sep="\n\n")
 
     files = glob.glob("./GrayCodes/view1/*.jpg")
@@ -97,4 +127,4 @@ if __name__ == "__main__":
     gray_codes = [undistort(file, Kmtx, dist) for file in files]
 
     decoder = GrayCodeDecoder(gray_codes)
-    hor1, vert1 = decoder.decode(0.5)
+    res1 = decoder.decode(0.2)
