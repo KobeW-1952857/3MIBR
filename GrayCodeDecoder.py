@@ -44,7 +44,7 @@ def get_depth_from_patterns(pattern_length: int) -> int:
 
 
 def set_bit(nums: np.ndarray, n: int, value: int) -> np.ndarray:
-    mask: np.uint8 = np.uint8(1) << np.uint8(n - 1)
+    mask: np.uint32 = np.uint32(1) << np.uint32(n - 1)
     return nums | mask if value else nums & ~mask
 
 
@@ -69,7 +69,7 @@ class GrayCodeDecoder:
 
             diff = cv2.absdiff(img1, img2) # absolute difference between the projection area's of pattern and its inverse
 
-            if (img1.shape[0] < diff.shape[0]):
+            if (img1.shape[0] < diff.shape[0]): # counter absdiff behavior when original shape is (2,) or smaller where it pads unneeded 0's
                 diff = diff[0:img1.shape[0]]
                 
 
