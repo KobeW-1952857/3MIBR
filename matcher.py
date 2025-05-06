@@ -15,20 +15,19 @@ def correspond():
     gray_codes = [undistort(file, Kmtx, dist) for file in files]
 
     decoder = GrayCodeDecoder(gray_codes)
-    view0 = decoder.decode(0.2)
+    view0 = decoder.decode(0.1)
 
     files = glob.glob("./GrayCodes/view1/*.jpg")
     files.sort()
     gray_codes = [undistort(file, Kmtx, dist) for file in files]
 
     decoder = GrayCodeDecoder(gray_codes)
-    view1 = decoder.decode(0.2)
+    view1 = decoder.decode(0.1)
 
     view0posVal = dict()
     view1posVal = dict()
 
     valid_indices = view0.nonzero()
-    print(valid_indices)
     
     coordCount = len(valid_indices[0])
     i = 0
@@ -37,13 +36,15 @@ def correspond():
         c = valid_indices[1][i]
         view0posVal[view0[r, c]] = (r, c)
         view1posVal[view1[r, c]] = (r, c)
+        i += 1
     
     matches = list()
-
-    for pos in view0posVal.items():
-        code = view0[pos[0], pos[1]]
-        matches.append((view0posVal[code], view1posVal[code]))
-
+    
+    for code in view0posVal.keys():
+        try:
+            matches.append((view0posVal[code], view1posVal[code]))
+        except:
+            pass
     print(matches)
             
 
