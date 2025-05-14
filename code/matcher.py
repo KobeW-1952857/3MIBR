@@ -4,6 +4,7 @@ from math import ceil
 import os
 from threading import Thread
 from time import sleep
+from matplotlib import pyplot as plt
 import numpy as np
 from pyparsing import col
 from GrayCodeDecoder import GrayCodeDecoder
@@ -42,18 +43,18 @@ def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes:
     coord_count = len(valid_indices[0])
     i = 0
     while i < coord_count:
-        r = valid_indices[0][i]
-        c = valid_indices[1][i]
-        if view0[r, c] != 0:
-            if view0[r, c] not in view0_value_positions:
-                view0_value_positions[view0[r, c]] = [(c, r)]
+        c = valid_indices[0][i]
+        r = valid_indices[1][i]
+        if view0[c, r] != 0:
+            if view0[c, r] not in view0_value_positions:
+                view0_value_positions[view0[c, r]] = [(r, c)]
             else:
-                view0_value_positions[view0[r, c]].append((c, r))
-        if view1[r, c] != 0:
-            if view1[r, c] not in view1_value_positions:
-                view1_value_positions[view1[r, c]] = [(c, r)]
+                view0_value_positions[view0[c, r]].append((r, c))
+        if view1[c, r] != 0:
+            if view1[c, r] not in view1_value_positions:
+                view1_value_positions[view1[c, r]] = [(r, c)]
             else:
-                view1_value_positions[view1[r, c]].append((c, r))
+                view1_value_positions[view1[c, r]].append((r, c))
         i += 1
 
     codePoints0 = list()
@@ -72,11 +73,11 @@ def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes:
             kp0.append(cv.KeyPoint(avgCoord0[0], avgCoord0[1], 1, -1)) # find common code positions
             codePoints0.append(cv.KeyPoint(avgCoord0[0], avgCoord0[1], 1, -1)) # get all detected points
             codePoints1.append(cv.KeyPoint(avgCoord1[0], avgCoord1[1], 1, -1))
-            dMatches.append(cv.DMatch(_queryIdx=count, _trainIdx=count, _distance=0))
+            dMatches.append([cv.DMatch(_queryIdx=count, _trainIdx=count, _distance=0)])
 
-    matchImg = cv.drawMatches(view0_gray_codes[0], kp0, view1_gray_codes[0], kp1, dMatches, None)
-    cv.imshow("matches", cv.resize(matchImg, (1920, 1080)))
-    cv.waitKey()
+    matchImg = cv.drawMatchesKnn(view0_gray_codes[0], kp0, view1_gray_codes[0], kp1, dMatches, None)
+    plt.imshow(matchImg)
+    plt.show()
 
     return matches
 

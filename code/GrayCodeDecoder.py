@@ -3,7 +3,7 @@ import os
 import cv2
 import numpy as np
 import math
-
+import matplotlib.pyplot as plt
 from GrayCodeEncoder import GrayCodeEncoder
 from calibration import undistort
 
@@ -96,7 +96,6 @@ class GrayCodeDecoder:
             
             projection_area[invalid_indices] = False # set all invalid pixels in projection area to false 
             proj_indices = projection_area.nonzero() # update projection area indices
-
         return result
 
     def __split_patterns(
