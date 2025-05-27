@@ -77,10 +77,10 @@ class GrayCodeDecoder:
             if type(threshold) == float:
                 mask = (diff > int(threshold * 255))
             else:
-                mask = (diff > int(threshold))
+                mask = (diff > threshold)
 
             current_projection_area[proj_indices] = mask[:,0] # insert into bool matrix where absdiff is above threshold
-            indices = current_projection_area.nonzero() # get coordinates of pixels in current projection area
+            indices = current_projection_area.nonzero() # get coordinates of pixels above threshold in current projection area
             result[indices] = set_bit(result[indices], i // 2 + 1, 1) # update greycode for pixels in current projection area
             
             unknown_pixels = np.zeros(self.shape, dtype=np.bool) # bool matrix representing pixels whose greycode is unknown, and are thus invalid
@@ -91,7 +91,7 @@ class GrayCodeDecoder:
                 mask = (diff == threshold)
             
             unknown_pixels[proj_indices] = mask[:,0] # insert into bool matrix where absdiff is equal to threshold
-            invalid_indices = unknown_pixels.nonzero() # get coordinates of pixels with absdiff smaller or equal to threshold or larger than 0
+            invalid_indices = unknown_pixels.nonzero() # get coordinates of pixels with absdiff equal to threshold
             result[invalid_indices] = 0 # set codes to zero because bit in current pattern was unknown, making whole code for that pixel unknown and thus invalid
             
             projection_area[invalid_indices] = False # set all invalid pixels in projection area to false 
