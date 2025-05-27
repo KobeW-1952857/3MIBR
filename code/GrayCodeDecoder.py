@@ -126,7 +126,7 @@ if __name__ == "__main__":
     # ]
 
     decoder = GrayCodeDecoder(gray_codes)
-    res0 = decoder.decode(0.2)
+    res0 = decoder.decode(15)
     # print(hor, vert, sep="\n\n")
 
     view1_files = glob.glob("../dataset/GrayCodes_HighRes/undistorted/view1/*.npy")
@@ -134,4 +134,4 @@ if __name__ == "__main__":
     gray_codes = [np.load(file) for file in view1_files]
 
     decoder = GrayCodeDecoder(gray_codes)
-    res1 = decoder.decode(0.2)
+    res1 = decoder.decode(15)
