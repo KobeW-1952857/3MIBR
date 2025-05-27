@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from GrayCodeDecoder import GrayCodeDecoder
 import cv2 as cv
+import random
 
 def averageCoords(coords: list):
     n = len(coords)
@@ -68,9 +69,15 @@ def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes:
             kp0.append(cv.KeyPoint(avgCoord0[0], avgCoord0[1], 1, -1)) # find common code positions
             codePoints0.append(cv.KeyPoint(avgCoord0[0], avgCoord0[1], 1, -1)) # get all detected points
             codePoints1.append(cv.KeyPoint(avgCoord1[0], avgCoord1[1], 1, -1))
-            dMatches.append([cv.DMatch(_queryIdx=count, _trainIdx=count, _distance=0)])
+            dMatches.append(cv.DMatch(_queryIdx=count, _trainIdx=count, _distance=0))
+            count += 1
 
-    matchImg = cv.drawMatchesKnn(view0_gray_codes[0], kp0, view1_gray_codes[0], kp1, dMatches, None)
+    sampleIndices = list(np.random.randint(0, len(dMatches), size=(1000)))
+    kp0 = [kp0[i] for i in sampleIndices]
+    kp1 = [kp1[i] for i in sampleIndices]
+    dMatches = dMatches[:1000]
+
+    matchImg = cv.drawMatches(view0_gray_codes[0], kp0, view1_gray_codes[0], kp1, dMatches, None)
     plt.imshow(matchImg)
     plt.show()
 
