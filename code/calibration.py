@@ -1,9 +1,10 @@
 from xml.sax import xmlreader
 import numpy as np
-import numpy.typing as npt
+from typing import Sequence
 import cv2.typing as cvt
 import glob
 import cv2 as cv
+from cv2.typing import MatLike
 
 from getFilenames import getChess 
 
@@ -22,7 +23,7 @@ def loadChessCorners(
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
     # Find the chess board corners
-    ret, corners = cv.findChessboardCorners(cv.resize(img, (0, 0), fx=0.1, fy=0.1), grid_size, None)
+    ret, corners = cv.findChessboardCorners(cv.resize(gray, (0, 0), fx=0.1, fy=0.1), grid_size, None)
 
     # If found, add object points, image points (after refining them)
     if ret:
@@ -34,7 +35,7 @@ def loadChessCorners(
         imgpoints.append(corners2)
 
 
-def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]):
+def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]) -> tuple[float, MatLike, MatLike, Sequence[MatLike], Sequence[MatLike], tuple]:
     print("Staring calibration")
     # termination criteria
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -47,13 +48,12 @@ def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]):
         loadChessCorners(fn, objpoints, imgpoints, grid_size, criteria)
         print(f"\rProgress: {i / len(file_names) * 100:.2f}%", end="")
     print("\nCalibration complete")
-    img = cv.imread(file_names[0])
-    # img = cv.resize(img, (0, 0), fx=0.1, fy=0.1)
+    gray = cv.cvtColor(cv.imread(file_names[0]), cv.COLOR_BGR2GRAY)
 
-    # Calibration
-    return cv.calibrateCamera(
-        objpoints, imgpoints, img.shape[::2], None, None, criteria=criteria
-    )
+    returnValues = list(cv.calibrateCamera(objpoints, imgpoints, gray.shape, None, None, criteria=criteria)) # Calibration
+    returnValues.append(gray.shape)
+
+    return tuple(returnValues)
 
 
 def undistort(file: str, Kmtx: cvt.MatLike, dist: cvt.MatLike, relative_size: int = 0.1) -> cvt.MatLike:
@@ -67,8 +67,8 @@ def undistort(file: str, Kmtx: cvt.MatLike, dist: cvt.MatLike, relative_size: in
 
 def undistortCustom(file: str, Kmtx: cvt.MatLike, dist: cvt.MatLike, newcameramtx: tuple[cvt.MatLike, cvt.Rect], shape: tuple) -> cvt.MatLike:
     img = cv.imread(file)
-    img = cv.resize(img, shape)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    gray = cv.resize(gray, shape)
 
     return cv.undistort(gray, Kmtx, dist, None, newcameramtx)
 
@@ -83,16 +83,15 @@ def combine_extrinsic_vecs(rvecs, tvecs):
     return extrinsics
 
 
-def get_image_dimensions(file_path: str) -> tuple[int, int]:
-    img = cv.imread(file_path)
-    return img.shape[:2]
+# def get_image_dimensions(file_path: str) -> tuple[int, int]:
+#     img = cv.imread(file_path)
+#     return img.shape[:2]
 
 
 if __name__ == "__main__":
     files = getChess()
-    rms, Kmtx, dist, rvecs, tvecs = intrinsic_calibration(files, (7, 9))
+    rms, Kmtx, dist, rvecs, tvecs, img_size = intrinsic_calibration(files, (7, 9))
     extrinsics = combine_extrinsic_vecs(rvecs, tvecs)
-    img_size = get_image_dimensions(files[0])
 
     np.savez(
         "calibration.npz",

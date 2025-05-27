@@ -31,8 +31,6 @@ def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes:
     decoder = GrayCodeDecoder(view1_gray_codes)
     view1: np.ndarray = decoder.decode(threshold)
 
-    print("decoded")
-
     view0_value_positions = dict()
     view1_value_positions = dict()
 
