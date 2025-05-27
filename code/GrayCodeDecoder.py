@@ -2,10 +2,8 @@ import glob
 import os
 import cv2
 import numpy as np
-import math
-import matplotlib.pyplot as plt
-from GrayCodeEncoder import GrayCodeEncoder
-from calibration import undistort
+# import math
+# import matplotlib.pyplot as plt
 
 def difference_indices(indices1, indices2):
     set1 = set(zip(*indices1))

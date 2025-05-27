@@ -6,11 +6,8 @@ from threading import Thread
 from time import sleep
 from matplotlib import pyplot as plt
 import numpy as np
-from pyparsing import col
 from GrayCodeDecoder import GrayCodeDecoder
-from calibration import undistort, undistortCustom
 import cv2 as cv
-import argparse
 
 def averageCoords(coords: list):
     n = len(coords)

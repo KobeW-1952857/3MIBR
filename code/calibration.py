@@ -1,8 +1,5 @@
-from xml.sax import xmlreader
 import numpy as np
 from typing import Sequence
-import cv2.typing as cvt
-import glob
 import cv2 as cv
 from cv2.typing import MatLike
 
@@ -54,23 +51,6 @@ def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]) -> tuple
     returnValues.append(gray.shape)
 
     return tuple(returnValues)
-
-
-def undistort(file: str, Kmtx: cvt.MatLike, dist: cvt.MatLike, relative_size: int = 0.1) -> cvt.MatLike:
-    img = cv.imread(file)
-    img = cv.resize(img, (0, 0), fx=relative_size, fy=relative_size)
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-
-    h, w = gray.shape[:2]
-    newcameramtx, roi = cv.getOptimalNewCameraMatrix(Kmtx, dist, (w, h), 1, (w, h))
-    return cv.undistort(gray, Kmtx, dist, None, newcameramtx)
-
-def undistortCustom(file: str, Kmtx: cvt.MatLike, dist: cvt.MatLike, newcameramtx: tuple[cvt.MatLike, cvt.Rect], shape: tuple) -> cvt.MatLike:
-    img = cv.imread(file)
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    gray = cv.resize(gray, shape)
-
-    return cv.undistort(gray, Kmtx, dist, None, newcameramtx)
 
 
 def combine_extrinsic_vecs(rvecs, tvecs):
