@@ -116,13 +116,9 @@ class GrayCodeDecoder:
 
 
 if __name__ == "__main__":
-    data = np.load("calibration.npz")
-    Kmtx = data["Kmtx"]
-    dist = data["dist"]
-
     view0_files = glob.glob("../dataset/GrayCodes_HighRes/undistorted/view0/*.npy")
     view0_files = sorted(view0_files, key=lambda f: int(os.path.splitext(os.path.basename(f))[0]))
-    gray_codes = [undistort(file, Kmtx, dist) for file in view0_files]
+    gray_codes = [np.load(file) for file in view0_files]
 
     # encoder = GrayCodeEncoder(16, 16, 4)
     # gray_codes = [
@@ -133,9 +129,9 @@ if __name__ == "__main__":
     res0 = decoder.decode(0.2)
     # print(hor, vert, sep="\n\n")
 
-    view1_files = glob.glob("../dataset/GrayCodes_HighRes/undistorted/view0/*.npy")
-    view1_files = sorted(view0_files, key=lambda f: int(os.path.splitext(os.path.basename(f))[0]))
-    gray_codes = [undistort(file, Kmtx, dist) for file in view1_files]
+    view1_files = glob.glob("../dataset/GrayCodes_HighRes/undistorted/view1/*.npy")
+    view1_files = sorted(view1_files, key=lambda f: int(os.path.splitext(os.path.basename(f))[0]))
+    gray_codes = [np.load(file) for file in view1_files]
 
     decoder = GrayCodeDecoder(gray_codes)
     res1 = decoder.decode(0.2)
