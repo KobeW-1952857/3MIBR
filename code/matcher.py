@@ -14,8 +14,8 @@ def averageCoords(coords: list):
     x: float = 0
     y: float = 0
     for coord in coords:
-        y += coord[0]
-        x += coord[1]
+        x += coord[0]
+        y += coord[1]
     x = x / n
     y = y / n
 
@@ -23,15 +23,15 @@ def averageCoords(coords: list):
 
 def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes: list):
     decoder = GrayCodeDecoder(view0_gray_codes)
-    view0: np.ndarray = decoder.decode(threshold)
+    view0, areaMask0 = decoder.decode(threshold)
 
     decoder = GrayCodeDecoder(view1_gray_codes)
-    view1: np.ndarray = decoder.decode(threshold)
+    view1, areaMask1= decoder.decode(threshold)
 
     view0_value_positions = dict()
     view1_value_positions = dict()
 
-    mask = (view0 > 0) | (view1 > 0)
+    mask = areaMask0 | areaMask1
 
     valid_indices = mask.nonzero() # only search relevant indices
     
@@ -40,16 +40,16 @@ def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes:
     while i < coord_count:
         c = valid_indices[0][i]
         r = valid_indices[1][i]
-        if view0[c, r] != 0:
+        if areaMask0[c, r]:
             if view0[c, r] not in view0_value_positions:
-                view0_value_positions[view0[c, r]] = [(r, c)]
+                view0_value_positions[view0[c, r]] = [(c, r)]
             else:
-                view0_value_positions[view0[c, r]].append((r, c))
-        if view1[c, r] != 0:
+                view0_value_positions[view0[c, r]].append((c, r))
+        if areaMask1[c, r]:
             if view1[c, r] not in view1_value_positions:
-                view1_value_positions[view1[c, r]] = [(r, c)]
+                view1_value_positions[view1[c, r]] = [(c, r)]
             else:
-                view1_value_positions[view1[c, r]].append((r, c))
+                view1_value_positions[view1[c, r]].append((c, r))
         i += 1
 
     codePoints0 = list()
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     view1_files = sorted(view1_files, key=lambda f: int(os.path.splitext(os.path.basename(f))[0]))
     view1_gray_codes = [np.load(file) for file in view1_files]
 
-    threshold = 83 # best threshold up until now 83
+    threshold = 8 # compare with 9 or 10 when testing as lower values have more points in shadow
     print(len(correspond(threshold, view0_gray_codes, view1_gray_codes)))
 
     # print(find_ideal_threshold_threaded(threshRangeStart=24, threshRangeEnd=100))

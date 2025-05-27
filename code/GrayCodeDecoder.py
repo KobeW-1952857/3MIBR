@@ -42,9 +42,13 @@ def get_depth_from_patterns(pattern_length: int) -> int:
 #     return num | mask if value else num & ~mask
 
 
-def set_bit(nums: np.ndarray, n: int, value: int) -> np.ndarray:
-    mask: np.uint32 = np.uint32(1) << np.uint32(n - 1)
-    return nums | mask if value else nums & ~mask
+def set_bit(img1: np.ndarray, img2: np.ndarray, nums: np.ndarray, n: int) -> np.ndarray:
+    codePart: np.uint32 = np.uint32(1) << np.uint32(n - 1)
+    mask = (img1 > img2)
+    nums[mask] = nums[mask] | codePart
+    # mask = (img1 <= img2)
+    # nums[mask] = nums[mask] | ~codePart
+    return nums
 
 
 class GrayCodeDecoder:
@@ -53,7 +57,7 @@ class GrayCodeDecoder:
         self.shape = gray_codes[0].shape
         self.depth = get_depth_from_patterns(len(gray_codes))
 
-    def decode(self, threshold: float | int) -> np.ndarray:
+    def decode(self, threshold: float | int) -> tuple[np.ndarray, np.ndarray]:
         full, patterns = self.__split_patterns()
         result = np.zeros(self.shape, dtype=np.uint32)
         proj_indices = self.__get_projection_indices(full, threshold)
@@ -62,39 +66,41 @@ class GrayCodeDecoder:
         for i in range(0, 4 * self.depth, 2):
             current_projection_area = np.zeros(self.shape, dtype=np.bool) # bool matrix representing the pixels that are in the projection area for the current greycode
 
-            img1: np.ndarray = patterns[i][proj_indices]
-            img2: np.ndarray = patterns[i + 1][proj_indices]
+            imgVal1: np.ndarray = patterns[i][projection_area] # pixel values in projection area from first image
+            imgVal2: np.ndarray = patterns[i + 1][projection_area] # pixel values in projection area from second image
 
-            diff = cv2.absdiff(img1, img2) # absolute difference between the projection area's of pattern and its inverse
+            diff = cv2.absdiff(imgVal1, imgVal2) # absolute difference between the projection area's of pattern and its inverse
 
-            if (img1.shape[0] < diff.shape[0]): # counter absdiff behavior when original shape is (2,) or smaller where it pads unneeded 0's
-                diff = diff[0:img1.shape[0]]
+            if (imgVal1.shape[0] < diff.shape[0]): # counter absdiff behavior when original shape is (2,) or smaller where it pads unneeded 0's
+                diff = diff[0:imgVal1.shape[0]]
             
-            mask: np.ndarray
+            mask: np.ndarray # threshold mask
 
             if type(threshold) == float:
-                mask = (diff > int(threshold * 255))
+                mask = (diff >= int(threshold * 255))
             else:
-                mask = (diff > threshold)
+                mask = (diff >= threshold)
 
-            current_projection_area[proj_indices] = mask[:,0] # insert into bool matrix where absdiff is above threshold
-            indices = current_projection_area.nonzero() # get coordinates of pixels above threshold in current projection area
-            result[indices] = set_bit(result[indices], i // 2 + 1, 1) # update greycode for pixels in current projection area
+            current_projection_area[projection_area] = mask[:,0] # insert into bool matrix where absdiff is above threshold
+            result[current_projection_area] = set_bit(
+                                                        patterns[i][current_projection_area],
+                                                        patterns[i + 1][current_projection_area],
+                                                        result[current_projection_area],
+                                                        i // 2 + 1,
+                                                    ) # update greycode for pixels in current projection area
             
             unknown_pixels = np.zeros(self.shape, dtype=np.bool) # bool matrix representing pixels whose greycode is unknown, and are thus invalid
 
             if type(threshold) == float:
-                mask = (diff == int(threshold * 255))
+                mask = (diff < int(threshold * 255))
             else:
-                mask = (diff == threshold)
+                mask = (diff < threshold)
             
-            unknown_pixels[proj_indices] = mask[:,0] # insert into bool matrix where absdiff is equal to threshold
-            invalid_indices = unknown_pixels.nonzero() # get coordinates of pixels with absdiff equal to threshold
-            result[invalid_indices] = 0 # set codes to zero because bit in current pattern was unknown, making whole code for that pixel unknown and thus invalid
+            unknown_pixels[projection_area] = mask[:,0] # insert into bool matrix where absdiff is lower than threshold
+            result[unknown_pixels] = 0 # set codes to zero because bit in current pattern was unknown, making whole code for that pixel unknown and thus invalid
             
-            projection_area[invalid_indices] = False # set all invalid pixels in projection area to false 
-            proj_indices = projection_area.nonzero() # update projection area indices
-        return result
+            projection_area[unknown_pixels] = False # set all invalid pixels in projection area to false 
+        return result, projection_area
 
     def __split_patterns(
         self,
@@ -107,9 +113,9 @@ class GrayCodeDecoder:
     def __get_projection_indices(self, full: list[np.ndarray], threshold: float | int) -> tuple[np.ndarray]:
         proj_area = cv2.absdiff(full[0], full[1])
         if type(threshold) == float:
-            proj_indices = np.asarray(proj_area > int(threshold * 255)).nonzero()
+            proj_indices = np.asarray(proj_area >= int(threshold * 255)).nonzero()
         else:
-            proj_indices = np.asarray(proj_area > threshold).nonzero()
+            proj_indices = np.asarray(proj_area >= threshold).nonzero()
         return proj_indices
 
 
@@ -124,7 +130,7 @@ if __name__ == "__main__":
     # ]
 
     decoder = GrayCodeDecoder(gray_codes)
-    res0 = decoder.decode(15)
+    res0, areaMask = decoder.decode(15)
     # print(hor, vert, sep="\n\n")
 
     view1_files = glob.glob("../dataset/GrayCodes_HighRes/undistorted/view1/*.npy")
@@ -132,4 +138,4 @@ if __name__ == "__main__":
     gray_codes = [np.load(file) for file in view1_files]
 
     decoder = GrayCodeDecoder(gray_codes)
-    res1 = decoder.decode(15)
+    res1, areaMask = decoder.decode(15)
