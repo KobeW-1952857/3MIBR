@@ -58,7 +58,6 @@ def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes:
     codePoints1 = list()
     kp0 = list()
 
-    matches = list(set(view0_value_positions.keys()).intersection(view1_value_positions.keys()))
     dMatches = list()
     count = 0
     for code in view0_value_positions.keys():
@@ -72,16 +71,17 @@ def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes:
             dMatches.append(cv.DMatch(_queryIdx=count, _trainIdx=count, _distance=0))
             count += 1
 
-    sampleIndices = list(np.random.randint(0, len(dMatches), size=(1000)))
-    kp0 = [kp0[i] for i in sampleIndices]
-    kp1 = [kp1[i] for i in sampleIndices]
-    dMatches = dMatches[:1000]
+    return kp0, kp1, dMatches
 
-    matchImg = cv.drawMatches(view0_gray_codes[0], kp0, view1_gray_codes[0], kp1, dMatches, None)
+def drawMatches(kp0: list, kp1: list, dMatches: list, view0_gray_codes: list, view1_gray_codes: list, matchAmount: int = 1000):
+    sampleIndices = list(np.random.randint(0, len(dMatches), size=(matchAmount)))
+    kp0Sample = [kp0[i] for i in sampleIndices]
+    kp1Sample = [kp1[i] for i in sampleIndices]
+    dMatchesSample = dMatches[:matchAmount]
+
+    matchImg = cv.drawMatches(view0_gray_codes[0], kp0Sample, view1_gray_codes[0], kp1Sample, dMatchesSample, None)
     plt.imshow(matchImg)
     plt.show()
-
-    return matches
 
 results = list()
 
@@ -151,6 +151,7 @@ if __name__ == "__main__":
     view1_gray_codes = [np.load(file) for file in view1_files]
 
     threshold = 8 # compare with 9 or 10 when testing as lower values have more points in shadow
-    print(len(correspond(threshold, view0_gray_codes, view1_gray_codes)))
+    kp0, kp1, dMatches = correspond(threshold, view0_gray_codes, view1_gray_codes)
+    drawMatches(kp0, kp1, dMatches, view0_gray_codes, view1_gray_codes)
 
     # print(find_ideal_threshold_threaded(threshRangeStart=24, threshRangeEnd=100))
