@@ -2,6 +2,7 @@ import math
 import cv2
 import numpy as np
 import numpy.typing as npt
+import optparse as opt
 
 
 def binary_to_gray(num: int) -> int:
@@ -71,8 +72,66 @@ class GrayCodeEncoder:
 
 
 if __name__ == "__main__":
-    encoder = GrayCodeEncoder(1080, 1920, 2)
+    usage = "usage: %prog [options]"
+    parser = opt.OptionParser(usage=usage)
+    parser.add_option(
+        "-r",
+        "--rows",
+        dest="rows",
+        type="int",
+        default=1080,
+        help="Number of rows for the patterns [default: %default]",
+    )
+    parser.add_option(
+        "-c",
+        "--cols",
+        dest="cols",
+        type="int",
+        default=1920,
+        help="Number of columns for the patterns [default: %default]",
+    )
+    parser.add_option(
+        "-d",
+        "--depth",
+        dest="depth",
+        type="int",
+        default=10,
+        help="Depth for Gray code encoding [default: %default]",
+    )
+    parser.add_option(
+        "-o",
+        "--output",
+        dest="output_prefix",
+        type="string",
+        default="pattern_",
+        help="Prefix for output image files [default: %default]",
+    )
+    parser.add_option(
+        "-s",
+        "--show",
+        dest="show_images",
+        action="store_true",
+        default=False,
+        help="Show images as they are generated",
+    )
+
+    (options, args) = parser.parse_args()  # Parses arguments from sys.argv
+
+    encoder = GrayCodeEncoder(options.rows, options.cols, options.depth)
+    print(
+        f"Generating {len(encoder.patterns)} patterns with {options.cols}x{options.rows} and depth {options.depth}."
+    )
+
     for i, pattern in enumerate(encoder.patterns):
-        cv2.imshow(str(i), pattern)
-        cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        if options.show_images:
+            cv2.imshow(str(i), pattern)
+            cv2.waitKey(0)  # Wait for a key press to show the next image
+
+        output_filename = f"{options.output_prefix}{i}.png"
+        cv2.imwrite(output_filename, pattern)
+        print(f"\rSaved {output_filename}", end="")
+    print()
+
+    if options.show_images:
+        cv2.destroyAllWindows()
+    print("Done.")
