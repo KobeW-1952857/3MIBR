@@ -62,6 +62,13 @@ def intrinsic_calibration(
     return tuple(returnValues)
 
 
+def combine_extrinsic_vec(rotation, translation):
+    extrinsic = np.eye(4)
+    extrinsic[:3, :3] = rotation
+    extrinsic[:3, 3] = translation.flatten()
+    return extrinsic
+
+
 def combine_extrinsic_vecs(rvecs, tvecs):
     extrinsics = []
     for rvec, tvec in zip(rvecs, tvecs):

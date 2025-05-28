@@ -1,5 +1,22 @@
 import open3d as o3d
 import numpy as np
+from numpy.typing import NDArray
+
+
+def drawCameraPoints(
+    height: int,
+    width: int,
+    intrinsic: NDArray[np.float64],
+    extrinsics: list[NDArray[np.float64]],
+):
+    line_sets = [
+        o3d.geometry.LineSet.create_camera_visualization(
+            width, height, intrinsic, extrinsic
+        )
+        for extrinsic in extrinsics
+    ]
+    o3d.visualization.draw_geometries(line_sets)
+
 
 if __name__ == "__main__":
     data = np.load("calibration.npz")
@@ -8,14 +25,5 @@ if __name__ == "__main__":
     extrinsics = data["extrinsics"]
     img_size = data["img_size"]
 
-    widht, height = img_size
-
-    line_sets = []
-
-    for extrinsic in extrinsics:
-        line_sets.append(
-            o3d.geometry.LineSet.create_camera_visualization(
-                widht, height, Kmtx, extrinsic
-            )
-        )
-    o3d.visualization.draw_geometries(line_sets)
+    width, height = img_size
+    drawCameraPoints(height, width, Kmtx, extrinsics)
