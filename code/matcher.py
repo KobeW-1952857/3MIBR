@@ -11,6 +11,8 @@ from GrayCodeDecoder import GrayCodeDecoder
 import cv2 as cv
 import random
 
+from utils.loadViewFiles import loadView
+
 
 def averageCoords(coords: list):
     n = len(coords)
@@ -77,7 +79,7 @@ def drawMatches(
     dMatches: list,
     view0_gray_codes: list,
     view1_gray_codes: list,
-    matchAmount: int = 1000,
+    matchAmount: int = 50,
 ):
     sampleIndices = list(np.random.randint(0, len(dMatches), size=(matchAmount)))
     kp0Sample = [kp0[i] for i in sampleIndices]
@@ -91,96 +93,17 @@ def drawMatches(
         kp1Sample,
         dMatchesSample,
         None,
+        flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
     )
-    plt.imshow(matchImg)
-    plt.show()
-
-
-results = list()
-
-
-def find_ideal_threshold(
-    minThreshold: int,
-    maxThreshold: int,
-    donenessIndex: int,
-    view0_gray_codes: list,
-    view1_gray_codes: list,
-):
-    maxMatches = -1
-    bestThreshold = -1
-    for i in range(minThreshold, maxThreshold):
-        threshold = i
-        matches = correspond(threshold, view0_gray_codes, view1_gray_codes)
-        if maxMatches == -1 or maxMatches < len(matches):
-            maxMatches = len(matches)
-            bestThreshold = threshold
-    results[donenessIndex] = (maxMatches, bestThreshold)
-
-
-def find_ideal_threshold_threaded(
-    threadCount: int = 12, threshRangeStart=0, threshRangeEnd=256
-):
-    view0_files = glob.glob("./GrayCodes/undistorted/view0/*.npy")
-    view0_files.sort()
-    view0_gray_codes = [np.load(file) for file in view0_files]
-
-    view1_files = glob.glob("./GrayCodes/undistorted/view1/*.npy")
-    view1_files.sort()
-    view1_gray_codes = [np.load(file) for file in view1_files]
-
-    threads: list = list()
-    step = int(ceil(threshRangeEnd - threshRangeStart / threadCount))
-    previousStep = threshRangeStart
-    currentStep = step
-    for i in range(threadCount):
-        results.append(())
-        t = Thread(
-            target=find_ideal_threshold,
-            args=(previousStep, currentStep, i, view0_gray_codes, view1_gray_codes),
-        )
-        threads.append(t)
-        t.start()
-        previousStep = currentStep
-        currentStep += step
-        currentStep = min(threshRangeEnd - 1, currentStep)
-    done = False
-    while done == False:
-        done = True
-        for r in results:
-            done = done and r != ()
-            if not done:
-                break
-        if not done:
-            sleep(10)
-
-    for t in threads:  # may be unnescesary but present just in case
-        t.join()
-
-    bestThreshold: int = -1
-    maxMatches: int = -1
-    for r in results:
-        if maxMatches == -1 or maxMatches < r[0]:
-            maxMatches = r[0]
-            bestThreshold = r[1]
-
-    return (maxMatches, bestThreshold)
+    cv.imshow("Matches", matchImg)
+    cv.waitKey(0)
 
 
 if __name__ == "__main__":
-    view0_files = glob.glob("../dataset/GrayCodes_HighRes/undistorted/view0/*.npy")
-    view0_files = sorted(
-        view0_files, key=lambda f: int(os.path.splitext(os.path.basename(f))[0])
-    )
-    view0_gray_codes = [np.load(file) for file in view0_files]
+    view0_gray_codes = loadView("dataset/GrayCodes_HighRes/undistorted/view0/*.jpg")
+    view1_gray_codes = loadView("dataset/GrayCodes_HighRes/undistorted/view1/*.jpg")
 
-    view1_files = glob.glob("../dataset/GrayCodes_HighRes/undistorted/view1/*.npy")
-    view1_files = sorted(
-        view1_files, key=lambda f: int(os.path.splitext(os.path.basename(f))[0])
-    )
-    view1_gray_codes = [np.load(file) for file in view1_files]
-
-    threshold = 8  # compare with 9 or 10 when testing as lower values have more points in shadow
+    # compare with 9 or 10 when testing as lower values have more points in shadow
+    threshold = 8
     kp0, kp1, dMatches = correspond(threshold, view0_gray_codes, view1_gray_codes)
     drawMatches(kp0, kp1, dMatches, view0_gray_codes, view1_gray_codes)
-
-    # print(find_ideal_threshold_threaded(threshRangeStart=24, threshRangeEnd=100))

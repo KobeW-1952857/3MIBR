@@ -3,7 +3,7 @@ import os
 import numpy as np
 import cv2 as cv
 import cv2.typing as cvt
-from getFilenames import getView0, getView1
+from utils.getFilenames import getView0, getView1
 
 
 def undistort(
@@ -28,12 +28,13 @@ def undistortImages(files: list, resolution: tuple, relativeDirPath: str):
         Kmtx, dist, resolution, 1, resolution
     )
 
-    gray_codes = [
-        undistort(file, Kmtx, dist, newcameramtx, resolution) for file in files
-    ]
+    if not os.path.exists(relativeDirPath):
+        os.makedirs(relativeDirPath)
 
-    for i, im in enumerate(gray_codes):
-        np.save(relativeDirPath + str(i) + ".npy", im)
+    for file in files:
+        print("\rUndistorting " + file + "...", end="")
+        img = undistort(file, Kmtx, dist, newcameramtx, resolution)
+        cv.imwrite(relativeDirPath + os.path.basename(file), img)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,8 @@ from typing import Sequence
 import cv2 as cv
 from cv2.typing import MatLike
 
-from getFilenames import getChess 
+from utils.getFilenames import getChess
+
 
 def loadChessCorners(
     file: str,
@@ -20,7 +21,9 @@ def loadChessCorners(
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
     # Find the chess board corners
-    ret, corners = cv.findChessboardCorners(cv.resize(gray, (0, 0), fx=0.1, fy=0.1), grid_size, None)
+    ret, corners = cv.findChessboardCorners(
+        cv.resize(gray, (0, 0), fx=0.1, fy=0.1), grid_size, None
+    )
 
     # If found, add object points, image points (after refining them)
     if ret:
@@ -32,7 +35,9 @@ def loadChessCorners(
         imgpoints.append(corners2)
 
 
-def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]) -> tuple[float, MatLike, MatLike, Sequence[MatLike], Sequence[MatLike], tuple]:
+def intrinsic_calibration(
+    file_names: list, grid_size: tuple[int, int]
+) -> tuple[float, MatLike, MatLike, Sequence[MatLike], Sequence[MatLike], tuple]:
     print("Staring calibration")
     # termination criteria
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -47,7 +52,11 @@ def intrinsic_calibration(file_names: list, grid_size: tuple[int, int]) -> tuple
     print("\nCalibration complete")
     gray = cv.cvtColor(cv.imread(file_names[0]), cv.COLOR_BGR2GRAY)
 
-    returnValues = list(cv.calibrateCamera(objpoints, imgpoints, gray.shape, None, None, criteria=criteria)) # Calibration
+    returnValues = list(
+        cv.calibrateCamera(
+            objpoints, imgpoints, gray.shape, None, None, criteria=criteria
+        )
+    )  # Calibration
     returnValues.append(gray.shape)
 
     return tuple(returnValues)
@@ -61,11 +70,6 @@ def combine_extrinsic_vecs(rvecs, tvecs):
         extrinsic[:3, 3] = tvec.flatten()
         extrinsics.append(extrinsic)
     return extrinsics
-
-
-# def get_image_dimensions(file_path: str) -> tuple[int, int]:
-#     img = cv.imread(file_path)
-#     return img.shape[:2]
 
 
 if __name__ == "__main__":
