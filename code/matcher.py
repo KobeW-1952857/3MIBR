@@ -32,8 +32,8 @@ def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes:
     decoder = GrayCodeDecoder(view1_gray_codes)
     view1, areaMask1 = decoder.decode(threshold)
 
-    view0_value_positions = defaultdict()
-    view1_value_positions = defaultdict()
+    view0_value_positions = defaultdict(list)
+    view1_value_positions = defaultdict(list)
 
     mask = areaMask0 | areaMask1
 
@@ -57,16 +57,13 @@ def correspond(threshold: float | int, view0_gray_codes: list, view1_gray_codes:
     for code in view0_value_positions.keys():
         if code in view1_value_positions:
             avgCoord1 = averageCoords(view1_value_positions[code])
-            kp1.append(
-                cv.KeyPoint(avgCoord1[0], avgCoord1[1], 1, -1)
-            )  # find common code positions
+            # find common code positions
+            kp1.append(cv.KeyPoint(avgCoord1[0], avgCoord1[1], 1, -1))
             avgCoord0 = averageCoords(view0_value_positions[code])
-            kp0.append(
-                cv.KeyPoint(avgCoord0[0], avgCoord0[1], 1, -1)
-            )  # find common code positions
-            codePoints0.append(
-                cv.KeyPoint(avgCoord0[0], avgCoord0[1], 1, -1)
-            )  # get all detected points
+            # find common code positions
+            kp0.append(cv.KeyPoint(avgCoord0[0], avgCoord0[1], 1, -1))
+            # get all detected points
+            codePoints0.append(cv.KeyPoint(avgCoord0[0], avgCoord0[1], 1, -1))
             codePoints1.append(cv.KeyPoint(avgCoord1[0], avgCoord1[1], 1, -1))
             dMatches.append(cv.DMatch(_queryIdx=count, _trainIdx=count, _distance=0))
             count += 1
