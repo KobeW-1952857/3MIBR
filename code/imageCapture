@@ -1,0 +1,70 @@
+import glob
+import os
+import cv2
+import optparse
+
+parser = optparse.OptionParser()
+parser.add_option("-o", "--output", dest="output")
+parser.add_option("-i", "--input", dest="input")
+parser.add_option(
+    "-c",
+    "--calibrate",
+    dest="calibrate",
+    action="store_true",
+    default=False,
+    help="Calibrate camera",
+)
+(options, args) = parser.parse_args()
+
+vc = cv2.VideoCapture(0)
+if not vc.isOpened():
+    print("Error: could not open camera")
+
+print(vc.getBackendName())
+
+print(vc.set(cv2.CAP_PROP_FPS, 30.0))
+print(vc.set(cv2.CAP_PROP_FRAME_WIDTH, 1280))
+print(vc.set(cv2.CAP_PROP_FRAME_HEIGHT, 800))
+print(vc.set(cv2.CAP_PROP_BRIGHTNESS, 0))
+# print(vc.set(cv2.CAP_PROP_EXPOSURE, -6))
+# print(vc.set(cv2.CAP_PROP_TEMPERATURE, 3200))
+# print(vc.set(cv2.CAP_PROP_AUTO_WB, 0))
+# print(vc.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.0))
+# print(vc.set(cv2.CAP_PROP_AUTOFOCUS, 0))
+
+current_frame = 0
+current_set = 0
+if not options.calibrate:
+    patterns = glob.glob(options.input + "/*.png")
+    patterns = sorted(
+        patterns, key=lambda f: int(os.path.splitext(os.path.basename(f))[0])
+    )
+    cv2.imshow("Pattern", cv2.imread(patterns[0]))
+while True:
+    rval, frame = vc.read()
+    if not rval:
+        continue
+    cv2.imshow("cam", frame)
+    key = cv2.waitKey(20)
+    match key:
+        case 99:  # c
+            save_path = options.output + "/" + str(current_set)
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+
+            cv2.imwrite(
+                save_path + "/" + str(current_frame) + ".jpg",
+                frame,
+            )
+            current_frame += 1
+            if not options.calibrate:
+                if current_frame >= len(patterns):
+                    current_frame = 0
+                    current_set += 1
+                cv2.imshow("Pattern", cv2.imread(patterns[current_frame]))
+        case 113:  # q
+            break
+
+
+cv2.destroyWindow("frame")
+vc.release()
