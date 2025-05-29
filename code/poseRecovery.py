@@ -11,7 +11,6 @@ from matcher import correspond
 
 
 def recoverPose(essential_matrix, kp0, kp1, intrinsic, mask):
-
     _, rotation_matrix, translation_vector, mask_pose = cv2.recoverPose(
         essential_matrix, kp0, kp1, intrinsic, mask=mask
     )

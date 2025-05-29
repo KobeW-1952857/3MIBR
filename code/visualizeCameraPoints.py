@@ -1,4 +1,5 @@
 import open3d as o3d
+import open3d.visualization
 import numpy as np
 from numpy.typing import NDArray
 
@@ -15,7 +16,7 @@ def drawCameraPoints(
         )
         for extrinsic in extrinsics
     ]
-    o3d.visualization.draw_geometries(line_sets)
+    open3d.visualization.draw_geometries(line_sets)
 
 
 if __name__ == "__main__":
