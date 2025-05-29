@@ -6,43 +6,28 @@ import cv2.typing as cvt
 from utils.getFilenames import getView0, getView1
 
 
-def undistort(
-    file: str,
-    Kmtx: cvt.MatLike,
-    dist: cvt.MatLike,
-    newcameramtx: cvt.MatLike,
-    shape: tuple,
-) -> cvt.MatLike:
-    img = cv.imread(file)
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    gray = cv.resize(gray, shape)
+def undistortImages(
+    files: list, resolution: tuple, save_path: str, intrinsic, distortion
+):
+    newcameramtx, _ = cv.getOptimalNewCameraMatrix(intrinsic, distortion, resolution, 1)
 
-    return cv.undistort(gray, Kmtx, dist, None, newcameramtx)
-
-
-def undistortImages(files: list, resolution: tuple, relativeDirPath: str):
-    data = np.load("calibration.npz")
-    Kmtx = data["Kmtx"]
-    dist = data["dist"]
-    newcameramtx, _ = cv.getOptimalNewCameraMatrix(
-        Kmtx, dist, resolution, 1, resolution
-    )
-
-    if not os.path.exists(relativeDirPath):
-        os.makedirs(relativeDirPath)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     for file in files:
-        print("\rUndistorting " + file + "...", end="")
-        img = undistort(file, Kmtx, dist, newcameramtx, resolution)
-        cv.imwrite(relativeDirPath + os.path.basename(file), img)
+        save_file = os.path.join(save_path, os.path.basename(file))
+        print("\rUndistorting " + os.path.basename(save_file), end="")
+        img = cv.imread(file, cv.IMREAD_GRAYSCALE)
+        img = cv.undistort(img, intrinsic, distortion, None, newcameramtx)
+        cv.imwrite(save_file, img)
+    print()
 
 
-if __name__ == "__main__":
-    view0_files = getView0()
-    undistortImages(
-        view0_files, (4752, 3168), "../dataset/GrayCodes_HighRes/undistorted/view0/"
-    )
-    view1_files = getView1()
-    undistortImages(
-        view1_files, (4752, 3168), "../dataset/GrayCodes_HighRes/undistorted/view1/"
-    )
+def undistortAllViews(base_path: str, save_path: str, intrinsic, distortion):
+    for view in os.listdir(base_path):
+        print("Undistorting " + view)
+        view_path = os.path.join(base_path, view)
+        files = glob.glob(view_path + "/*.jpg")
+        resolution = cv.imread(files[0], cv.IMREAD_GRAYSCALE).shape
+        save_path = os.path.join(save_path, view)
+        undistortImages(files, resolution, save_path, intrinsic, distortion)

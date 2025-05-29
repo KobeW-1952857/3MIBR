@@ -10,14 +10,12 @@ from essentialMatrixGeneration import generateEssentialMatrix
 from matcher import correspond
 
 
-def recoverPose(kp0, kp1, matches):
-    E, mask, K = generateEssentialMatrix(kp0, kp1, matches)
+def recoverPose(essential_matrix, kp0, kp1, intrinsic, mask):
 
-    kp0Temp = np.asarray([kp0[m.queryIdx].pt for m in matches], dtype=np.float32)
-    kp1Temp = np.asarray([kp1[m.queryIdx].pt for m in matches], dtype=np.float32)
-
-    _, R, t, mask_pose = cv2.recoverPose(E, kp0Temp, kp1Temp, K, mask=mask)
-    return R, t, mask_pose, K
+    _, rotation_matrix, translation_vector, mask_pose = cv2.recoverPose(
+        essential_matrix, kp0, kp1, intrinsic, mask=mask
+    )
+    return rotation_matrix, translation_vector, mask_pose
 
 
 if __name__ == "__main__":

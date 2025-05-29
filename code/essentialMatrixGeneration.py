@@ -5,14 +5,13 @@ import numpy as np
 
 from matcher import correspond
 
-def generateEssentialMatrix(kp0, kp1, matches):
-    Kmtx = np.load("calibration.npz")["Kmtx"]
 
-    kp0Temp = np.asarray([kp0[m.queryIdx].pt for m in matches])
-    kp1Temp = np.asarray([kp1[m.queryIdx].pt for m in matches])
+def generateEssentialMatrix(kp0, kp1, intrinsic_matrix):
+    E, mask = cv2.findEssentialMat(
+        kp0, kp1, intrinsic_matrix, cv2.RANSAC, prob=0.999, threshold=1.0
+    )
+    return E, mask
 
-    E, mask = cv2.findEssentialMat(kp0Temp, kp1Temp, Kmtx, cv2.RANSAC, prob=0.999, threshold=1.0)
-    return E, mask, Kmtx
 
 if __name__ == "__main__":
     view0_files = glob.glob("../dataset/GrayCodes_HighRes/undistorted/view0/*.npy")
