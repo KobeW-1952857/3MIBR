@@ -4,6 +4,13 @@ import numpy as np
 from numpy.typing import NDArray
 
 
+def createLineSet(height, width, intrinsic, extrinsic):
+    line_set = o3d.geometry.LineSet.create_camera_visualization(
+        width, height, intrinsic, extrinsic
+    )
+    return line_set
+
+
 def drawCameraPoints(
     height: int,
     width: int,
@@ -16,7 +23,11 @@ def drawCameraPoints(
         )
         for extrinsic in extrinsics
     ]
-    open3d.visualization.draw_geometries(line_sets)
+    open3d.visualization.draw_geometries(
+        line_sets,
+        front=np.array([0.0, 0.0, -1.0]),
+        up=np.array([0.0, -1.0, 0.0]),
+    )
 
 
 if __name__ == "__main__":

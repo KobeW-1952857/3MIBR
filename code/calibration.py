@@ -50,11 +50,16 @@ def intrinsic_calibration(
         loadChessCorners(fn, objpoints, imgpoints, grid_size, criteria)
         print(f"\rProgress: {i / len(file_names) * 100:.2f}%", end="")
     print("\nCalibration complete")
-    gray = cv.cvtColor(cv.imread(file_names[0]), cv.COLOR_BGR2GRAY)
+    gray = cv.imread(file_names[0], cv.IMREAD_GRAYSCALE)
 
     returnValues = list(
         cv.calibrateCamera(
-            objpoints, imgpoints, gray.shape, None, None, criteria=criteria
+            objpoints,
+            imgpoints,
+            gray.shape,
+            None,
+            None,
+            criteria=criteria,
         )
     )  # Calibration
     returnValues.append(gray.shape)
